@@ -1,0 +1,258 @@
+﻿@model PertAnalysisResult
+
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3">
+                <h2 class="h4 mb-0">Project Summary</h2>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="p-4 bg-light rounded-3">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-clock me-2"></i>Project Duration
+                            </h5>
+                            <h3 class="mb-0">@Model.ProjectDuration weeks</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-4 bg-light rounded-3">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-route me-2"></i>Critical Path
+                            </h5>
+                            <h6 class="mb-0">@string.Join(" → ", Model.CriticalPath.Select(a => a.Name))</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <!-- Activity Details Card -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h2 class="h4 mb-0">Activity Details</h2>
+                        <div class="d-flex gap-3">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-warning me-2">Critical</span>
+                                <small class="text-muted">Critical Path</small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-secondary me-2">No</span>
+                                <small class="text-muted">Normal Activity</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">Activity</th>
+                                        <th>Expected Time</th>
+                                        <th>Earliest Start</th>
+                                        <th>Earliest Finish</th>
+                                        <th>Latest Start</th>
+                                        <th>Latest Finish</th>
+                                        <th>Total Float</th>
+                                        <th class="text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var activity in Model.Activities)
+                                    {
+                                        <tr class="@(activity.IsOnCriticalPath ? "table-warning" : "")">
+                                            <td class="fw-medium ps-3">@activity.Name</td>
+                                            <td>@activity.ExpectedTime.ToString("F1")</td>
+                                            <td>@activity.EarliestStart.ToString("F1")</td>
+                                            <td>@activity.EarliestFinish.ToString("F1")</td>
+                                            <td>@activity.LatestStart.ToString("F1")</td>
+                                            <td>@activity.LatestFinish.ToString("F1")</td>
+                                            <td>@activity.TotalFloat.ToString("F1")</td>
+                                            <td class="text-center">
+                                                @if (activity.IsOnCriticalPath)
+                                                {
+                                                    <span class="badge bg-warning px-3">Critical</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary px-3">No</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PERT Chart Card -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h2 class="h4 mb-0">PERT Network Diagram</h2>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="toggleFullscreen()">
+                            <i class="fas fa-expand me-2"></i>Fullscreen
+                        </button>
+                    </div>
+                    <div class="card-body bg-light" id="chartContainer">
+                        <div class="mermaid">
+                            graph LR
+                            %% Node definitions with duration
+                            @foreach (var activity in Model.Activities)
+                            {
+                                @Html.Raw($"{activity.Name}[{activity.Name}<br/>{activity.ExpectedTime:F1}w]\n")
+                            }
+
+                            %% Dependencies
+                            @foreach (var activity in Model.Activities)
+                            {
+                                foreach (var dependency in activity.Precedence)
+                                {
+                                    
+                                        @Html.Raw($"{dependency} --> {activity.Name}\n")
+                                   
+                                }
+                            }
+
+                            %% Styles
+                            classDef default fill:#f8fafc,stroke:#64748b,rx:5,ry:5
+                            classDef critical fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,rx:5,ry:5
+
+                            %% Apply critical path styling
+                            @foreach (var activity in Model.Activities.Where(a => a.IsOnCriticalPath))
+                            {
+                                @Html.Raw($"class {activity.Name} critical\n")
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h2 class="h4 mb-0">Gantt Chart Timeline</h2>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="toggleGanttFullscreen()">
+                            <i class="fas fa-expand me-2"></i>Fullscreen
+                        </button>
+                    </div>
+                    <div class="card-body bg-light" id="ganttContainer">
+                        <div id="gantt"></div>
+                    </div>
+                </div>
+                <div class="text-center mt-4 mb-5">
+                    <a asp-action="Index" class="btn btn-primary px-4">
+                        <i class="fas fa-arrow-left me-2"></i>New Analysis
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        @section Scripts {
+            <script>
+                mermaid.initialize({
+                    startOnLoad: true,
+                    theme: 'neutral',
+                    flowchart: {
+                        curve: 'basis',
+                        nodeSpacing: 50,
+                        rankSpacing: 80,
+                        padding: 20,
+                        defaultRenderer: 'dagre'
+                    },
+                    themeVariables: {
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        fontSize: '14px'
+                    }
+                });
+
+                function toggleFullscreen() {
+                    const container = document.getElementById('chartContainer');
+
+                    if (!document.fullscreenElement) {
+                        container.requestFullscreen().catch(err => {
+                            alert(`Error attempting to enable fullscreen: ${err.message}`);
+                        });
+                    } else {
+                        document.exitFullscreen();
+                    }
+                }
+
+                document.addEventListener('fullscreenchange', () => {
+                    const container = document.getElementById('chartContainer');
+                    if (document.fullscreenElement) {
+                        container.style.height = '100vh';
+                        container.style.backgroundColor = 'white';
+                        container.style.padding = '2rem';
+                    } else {
+                        container.style.height = 'auto';
+                        container.style.backgroundColor = '';
+                        container.style.padding = '';
+                    }
+                });
+            </script>
+            <script>
+                // Convert C# model data to Gantt tasks
+                const tasks = @Html.Raw(Json.Serialize(Model.Activities.Select(a => new
+                    {
+                        id = a.Name,
+                        name = a.Name,
+                        start = DateTime.Now.AddDays(a.EarliestStart * 7).ToString("yyyy-MM-dd"),
+                        end = DateTime.Now.AddDays(a.EarliestFinish * 7).ToString("yyyy-MM-dd"),
+                        progress = 0,
+                        dependencies = string.Join(",", a.Precedence),
+                        custom_class = a.IsOnCriticalPath ? "critical" : ""
+                    })));
+
+                // Initialize Gantt Chart
+                const gantt = new Gantt("#gantt", tasks, {
+                    header_height: 50,
+                    column_width: 30,
+                    step: 24,
+                    view_modes: ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month'],
+                    bar_height: 20,
+                    bar_corner_radius: 3,
+                    arrow_curve: 5,
+                    padding: 18,
+                    view_mode: 'Week',
+                    date_format: 'YYYY-MM-DD',
+                    custom_popup_html: function(task) {
+                        return `
+                            <div class="details-container">
+                                <h5>${task.name}</h5>
+                                <p>Start: ${task.start}</p>
+                                <p>End: ${task.end}</p>
+                                ${task.custom_class === 'critical' ? '<p class="text-warning">Critical Path Activity</p>' : ''}
+                            </div>
+                        `;
+                    }
+                });
+
+                function toggleGanttFullscreen() {
+                    const container = document.getElementById('ganttContainer');
+
+                    if (!document.fullscreenElement) {
+                        container.requestFullscreen().catch(err => {
+                            alert(`Error attempting to enable fullscreen: ${err.message}`);
+                        });
+                        container.classList.add('fullscreen');
+                    } else {
+                        document.exitFullscreen();
+                        container.classList.remove('fullscreen');
+                    }
+                }
+
+                document.addEventListener('fullscreenchange', () => {
+                    const container = document.getElementById('ganttContainer');
+                    if (!document.fullscreenElement) {
+                        container.classList.remove('fullscreen');
+                    }
+                });
+
+                window.addEventListener('resize', () => {
+                    gantt.refresh(tasks);
+                });
+            </script>
+        }
+    </div>
+</div>

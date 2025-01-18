@@ -1,0 +1,118 @@
+﻿@model List<ActivityInputModel>
+
+<div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <h2 class="h4 mb-0">PERT Analysis Input</h2>
+        <a asp-action="Reset" class="btn btn-outline-secondary">
+            <i class="fas fa-redo-alt me-2"></i>Reset
+        </a>
+    </div>
+    <div class="card-body">
+        <form asp-action="Calculate" method="post" id="pertForm">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Activity</th>
+                            <th>Precedence</th>
+                            <th>Optimistic (a)</th>
+                            <th>Most Likely (m)</th>
+                            <th>Pessimistic (b)</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="activitiesTable">
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            <tr class="align-middle">
+                                <td>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-tasks"></i>
+                                        </span>
+                                        <input asp-for="@Model[i].Name" class="form-control" placeholder="Activity name" />
+                                    </div>
+                                    <span asp-validation-for="@Model[i].Name" class="text-danger small"></span>
+                                </td>
+                                <td>
+                                    <input asp-for="@Model[i].PrecedenceString" class="form-control" placeholder="e.g., A,B" />
+                                    <span asp-validation-for="@Model[i].PrecedenceString" class="text-danger small"></span>
+                                </td>
+                                <td>
+                                    <input asp-for="@Model[i].OptimisticTime" class="form-control" type="number" step="0.1" />
+                                    <span asp-validation-for="@Model[i].OptimisticTime" class="text-danger small"></span>
+                                </td>
+                                <td>
+                                    <input asp-for="@Model[i].MostLikelyTime" class="form-control" type="number" step="0.1" />
+                                    <span asp-validation-for="@Model[i].MostLikelyTime" class="text-danger small"></span>
+                                </td>
+                                <td>
+                                    <input asp-for="@Model[i].PessimisticTime" class="form-control" type="number" step="0.1" />
+                                    <span asp-validation-for="@Model[i].PessimisticTime" class="text-danger small"></span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRow(this)">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex gap-2 mt-4">
+                <button type="button" class="btn btn-primary" onclick="addRow()">
+                    <i class="fas fa-plus me-2"></i>Add Activity
+                </button>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-calculator me-2"></i>Calculate PERT
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function addRow() {
+            const rowCount = document.querySelectorAll('#activitiesTable tr').length;
+            const newRow = `
+                <tr class="align-middle">
+                    <td>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-tasks"></i>
+                            </span>
+                            <input name="[${rowCount}].Name" class="form-control" placeholder="Activity name" required />
+                        </div>
+                    </td>
+                    <td>
+                        <input name="[${rowCount}].PrecedenceString" class="form-control" placeholder="e.g., A,B" />
+                    </td>
+                    <td>
+                        <input name="[${rowCount}].OptimisticTime" class="form-control" type="number" step="0.1" required />
+                    </td>
+                    <td>
+                        <input name="[${rowCount}].MostLikelyTime" class="form-control" type="number" step="0.1" required />
+                    </td>
+                    <td>
+                        <input name="[${rowCount}].PessimisticTime" class="form-control" type="number" step="0.1" required />
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRow(this)">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            document.getElementById('activitiesTable').insertAdjacentHTML('beforeend', newRow);
+        }
+
+        function removeRow(button) {
+            if (document.querySelectorAll('#activitiesTable tr').length > 1) {
+                button.closest('tr').remove();
+            } else {
+                alert('Cannot remove the last row');
+            }
+        }
+    </script>
+}
