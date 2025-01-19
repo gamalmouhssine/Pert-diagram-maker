@@ -1,9 +1,9 @@
-# PERT Chart Generator
+# Pert-diagram-maker
 
 ![.NET](https://img.shields.io/badge/.NET-8-blue)
 ![GitHub](https://img.shields.io/github/license/gamalmouhssine/Pert-diagram-maker)
 
-A web-based **PERT Chart Generator** built with **ASP.NET Core 8** to help project managers visualize task dependencies, calculate critical paths, and estimate project timelines. This tool uses **Mermaid.js** to render interactive PERT charts, making it easy to understand complex project workflows.
+A web-based **Pert-diagram-maker** built with **ASP.NET Core 8** to help project managers visualize task dependencies, calculate critical paths, and estimate project timelines. This tool uses **Mermaid.js** to render interactive PERT charts, making it easy to understand complex project workflows.
 
 ---
 
